@@ -43,30 +43,25 @@ def get_school_id_and_year_from_url(team_responses):
 def get_player_stats(team_responses):
     pb = progressbar.ProgressBar()
     player_stats = {}
+    temp_stats = {}
     for response in pb(team_responses):
         if response['Status'] == 200:
             team_soup = BS(response['Response_Text'], features='lxml')
             tables = team_soup.findAll('table')
-            temp_stats = {
-                'Passing' : {},
-                'Rushing' : {},
-                'Receiving' : {},
-                'Kicking' : {},
-                'Defense' : {}
-            }
             for i in range(0,len(tables)):
                 stat_type = get_stat_type(i)
                 if i%2 == 0:
+                    temp_stats = {}
                     for row in tables[i].find('tbody').findAll('tr'):
                         if row.find('a'):
                             player_uid = row.find('a').get('data-player-uid')
                             player_id = player_uid[player_uid.rfind(':')+1:]
-                            temp_stats[stat_type][row.get('data-idx')] = {
-                                'Player_ID' : player_id
-                            }
-                            player_stats[player_id] = {
-                                'Name' : row.find('a').getText()
-                            }
+                            temp_stats[row.get('data-idx')] = player_id
+                            if player_id not in player_stats.keys():
+                                player_stats[player_id] = {
+                                    'Name' : row.find('a').getText(),
+                                    'Seasons' : {}
+                                }
                 else:
                     headers = []
                     for row in tables[i].find('thead').findAll('th'):
@@ -74,14 +69,17 @@ def get_player_stats(team_responses):
                             headers.append(row.find('a').getText())
                     for player in tables[i].find('tbody').findAll('tr'):
                         stats = player.findAll('td')
-                        for stat in range(0, len(stats)):
-                            data_id = player.get('data-idx')
-                            if int(data_id) in range(0, len(tables[i].find('tbody').findAll('tr'))-1):
+                        data_id = player.get('data-idx')
+                        if int(data_id) in range(0, len(tables[i].find('tbody').findAll('tr'))-1):
+                            player_id = temp_stats.get(data_id)
+                            player_stats[player_id]['Seasons'][response['Year']] = {}
+                            player_stats[player_id]['Seasons'][response['Year']][stat_type] = {}
+                            for stat in range(0, len(stats)):
                                 # temp_stats[get_stat_type(i)][player.get('data-idx')][headers[stat]] = stats[stat].getText()
-                                player_stats[temp_stats[stat_type][data_id]][stat_type][headers[stat]] = stats[stat].getText()                               
+                                player_stats[player_id]['Seasons'][response['Year']][stat_type][headers[stat]] = stats[stat].getText()                               
             # player_stats[response['URL']] = temp_stats
         else:
-            player_stats[response.url] = {    
+            player_stats[response['URL']] = {    
                 'No Data' : response['Status'],
                 'URL' : response['URL']
             }
