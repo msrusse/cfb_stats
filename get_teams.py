@@ -13,14 +13,18 @@ def get_division_i_teams():
 
 def get_team_ids(teams_soup):
     teams = {}
-    teams_section = teams_soup.findAll('section', {'class':'TeamLinks'})
-    for team in teams_section:
-        href = team.find('a', href=True).get('href')
-        id_with_name = href[href.find('/id/')+4:].split('/')
-        teams[str(id_with_name[1])] = {
-            'ESPN_ID' : str(id_with_name[0]),
-            'Name' : team.find('h2').getText()
-        }
+    conference_headers = teams_soup.findAll('div', {'class' : 'mt7'})
+    for conference in conference_headers:
+        current_conf = conference.find('div', {'class' : 'headline'}).getText()
+        teams_section = conference.findAll('section', {'class':'TeamLinks'})
+        for team in teams_section:
+            href = team.find('a', href=True).get('href')
+            id_with_name = href[href.find('/id/')+4:].split('/')
+            teams[str(id_with_name[1])] = {
+                'ID' : str(id_with_name[0]),
+                'name' : team.find('h2').getText(),
+                'conference' : current_conf
+            }
     return teams
 
 teams = get_team_ids(get_division_i_teams())

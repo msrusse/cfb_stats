@@ -1,3 +1,4 @@
 *.html
 *.json
 bash.exe.stackdump
+.DS_Store
